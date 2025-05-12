@@ -9,15 +9,15 @@ from python_a2a import A2AClient
 
 def main():
     parser = argparse.ArgumentParser(description="Simple A2A Agent Coordinator")
-    parser.add_argument("--prompt", type=str, default="What are some interesting facts about space?",
+    parser.add_argument("--prompt", type=str, default="What are the prices of the 3 most expensive Nike shoes?",
                       help="Initial prompt to start the conversation")
     parser.add_argument("--turns", type=int, default=3,
-                      help="Number of back-and-forth turns (default: 3)")
+                      help="Number of back-and-forth turns (default: 2)")
     args = parser.parse_args()
     
     # Connect to both agents
     agent1 = A2AClient("http://localhost:5000")
-    agent2 = A2AClient("http://localhost:5001")
+    agent2 = A2AClient("http://localhost:5002")
     
     # Start conversation
     current_message = args.prompt
