@@ -16,7 +16,6 @@ Requirements:
     pip install "python-a2a[openai,server]"
 """
 
-
 import sys
 import os
 import argparse
@@ -100,7 +99,7 @@ def parse_arguments():
         help="OpenAI model to use (default: gpt-4o-mini)"
     )
     parser.add_argument(
-        "--temperature", type=float, default=0.1,
+        "--temperature", type=float, default=0,
         help="Temperature for generation (default: 0.1)"
     )
     parser.add_argument(
@@ -199,32 +198,57 @@ def main():
     
     # Create an Agent Card for our OpenAI-powered agent
     agent_card = AgentCard(
-        name="OpenAI Assistant 2",
-        description=f"Second A2A agent powered by OpenAI's {args.model}",
-        url=f"http://localhost:{port}",
-        version="1.0.0",
-        skills=[
-            AgentSkill(
-                name="General Questions",
-                description="Answer general knowledge questions",
-                examples=["What's the capital of Japan?", "How do solar panels work?"]
-            ),
-            AgentSkill(
-                name="Creative Writing",
-                description="Generate creative content",
-                examples=["Write a short poem about autumn", "Create a slogan for a coffee shop"]
-            ),
-            AgentSkill(
-                name="Problem Solving",
-                description="Help solve problems and provide solutions",
-                examples=["How do I improve my time management?", "What's a good strategy for learning a new language?"]
-            ),
-            AgentSkill(
-                name="Request sender",
-                description="send requests for releavent answer",
-                examples=["what is the current price of somthing?", "how old is the pope now?"]
-            ),
-        ]
+    name="OpenAI Assistant 1",
+    description=f"Information requesting agent powered by OpenAI's {args.model}",
+    url=f"http://localhost:{port}",
+    version="1.0.0",
+    skills=[
+        AgentSkill(
+            name="Search Requests",
+            description="Creates clear and specific search queries",
+            examples=[
+                "QUERY: search for current weather in New York", 
+                "QUERY: search for latest news about artificial intelligence",
+                "QUERY: search for best running shoes 2025 reviews"
+            ]
+        ),
+        AgentSkill(
+            name="Web Scraping Requests",
+            description="Formulates specific webpage scraping requests",
+            examples=[
+                "QUERY: scrape https://www.amazon.com/bestsellers", 
+                "QUERY: scrape https://news.ycombinator.com/",
+                "QUERY: scrape https://www.bbc.com/news/technology"
+            ]
+        ),
+        AgentSkill(
+            name="Price Checking Requests",
+            description="Creates structured product price checking requests",
+            examples=[
+                "QUERY: check price of iPhone 14 on Amazon", 
+                "QUERY: check price of MacBook Pro on BestBuy",
+                "QUERY: check price of Nike Air Max on Nike.com"
+            ]
+        ),
+        AgentSkill(
+            name="Comparison Requests",
+            description="Formulates requests to compare products or information",
+            examples=[
+                "QUERY: compare iPhone vs Samsung Galaxy latest models", 
+                "QUERY: compare prices of gaming laptops on Amazon",
+                "QUERY: compare nutritional info of popular breakfast cereals"
+            ]
+        ),
+        AgentSkill(
+            name="Real-time Information Requests",
+            description="Creates requests for time-sensitive information",
+            examples=[
+                "QUERY: get current date and time", 
+                "QUERY: check current stock price of AAPL",
+                "QUERY: find latest exchange rate USD to EUR"
+            ]
+        )
+    ]
     )
     
     # Create the OpenAI-powered A2A server
@@ -281,7 +305,7 @@ def main():
             api_key=os.environ["OPENAI_API_KEY"],
             model=args.model,
             temperature=args.temperature,
-            system_prompt="You are the second assistant. You are thoughtful, curious, and always ask follow-up questions. You provide insightful perspectives on topics."
+            system_prompt="You are a requesting agent that formulates clear search and scraping requests. Begin your responses with a clear statement about what you know, then end with a direct, structured query in the format: 'QUERY: [action] [specific terms]'. For search queries, use 'QUERY: search for [search terms]'. For scraping, use 'QUERY: scrape [URL]'. For product pricing, use 'QUERY: check price of [product] on [website]'. Keep your requests concise and focused on one specific action. Example: 'QUERY: search for current iPhone 14 price' or 'QUERY: scrape https://www.amazon.com/Apple-iPhone-14-128GB-Blue/dp/B0BN1RJXCG'"
         )
     else:
         # Create the real OpenAI server
@@ -289,7 +313,7 @@ def main():
             api_key=os.environ["OPENAI_API_KEY"],
             model=args.model,
             temperature=args.temperature,
-            system_prompt="You are the second assistant. You are thoughtful, curious, and always ask follow-up questions. You provide insightful perspectives on topics. at the end of each follow up request you request scraping from a releavent website (for example, if related to nike shoes - scrape https://www.nike.com/)"
+            system_prompt="You are a requesting agent that formulates clear search and scraping requests. Begin your responses with a clear statement about what you know, then end with a direct, structured query in the format: 'QUERY: [action] [specific terms]'. For search queries, use 'QUERY: search for [search terms]'. For scraping, use 'QUERY: scrape [URL]'. For product pricing, use 'QUERY: check price of [product] on [website]'. Keep your requests concise and focused on one specific action. Example: 'QUERY: search for current iPhone 14 price' or 'QUERY: scrape https://www.amazon.com/Apple-iPhone-14-128GB-Blue/dp/B0BN1RJXCG'"
 
         )
         
