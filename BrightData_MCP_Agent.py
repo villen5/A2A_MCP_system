@@ -405,10 +405,10 @@ class BrightDataMCPAgent(A2AServer):
         self.openai_client = OpenAIA2AServer(
             api_key=os.environ["OPENAI_API_KEY"],
             model=openai_model,
-            temperature=0.7,
+            temperature=0.1,
             system_prompt=(
                 "You are a helpful AI assistant with access to BrightData web tools. "
-                "When asked questions about web searching or scraping, use the appropriate tool. "
+                "When asked questions that can be about web searching or scraping, use the appropriate tool. "
                 "- For search queries, use the search_engine tool with an appropriate search engine.\n"
                 "- For webpage content, use scrape_as_markdown or scrape_as_html.\n"
                 "- For specific data like Amazon products, LinkedIn profiles, or Instagram data, "
