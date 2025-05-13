@@ -361,7 +361,7 @@ def start_mcp_server(port):
                     if snapshot_data.get('status') == 'running':
                         print(f"[web_data_{id}] snapshot not ready, polling again (attempt {attempts + 1}/{max_attempts})")
                         attempts += 1
-                        time.sleep(1)
+                        time.sleep(3)
                         continue
                     
                     print(f"[web_data_{id}] snapshot data received after {attempts + 1} attempts")
@@ -370,7 +370,7 @@ def start_mcp_server(port):
                 except Exception as poll_error:
                     print(f"[web_data_{id}] polling error: {str(poll_error)}")
                     attempts += 1
-                    time.sleep(1)
+                    time.sleep(3)
             
             raise Exception(f"Timeout after {max_attempts} seconds waiting for data")
         
@@ -405,9 +405,9 @@ class BrightDataMCPAgent(A2AServer):
         self.openai_client = OpenAIA2AServer(
             api_key=os.environ["OPENAI_API_KEY"],
             model=openai_model,
-            temperature=0.1,
+            temperature=0,
             system_prompt=(
-                "You are a helpful AI assistant with access to BrightData web tools. "
+                "You are a helpful AI assistant that will provide data using BrightData web tools."
                 "When asked questions that can be about web searching or scraping, use the appropriate tool. "
                 "- For search queries, use the search_engine tool with an appropriate search engine.\n"
                 "- For webpage content, use scrape_as_markdown or scrape_as_html.\n"
@@ -433,7 +433,7 @@ class BrightDataMCPAgent(A2AServer):
             text_lower = text.lower()
             
             # Handle search engine requests
-            if any(kw in text_lower for kw in ["search", "find information", "look up"]):
+            if any(kw in text_lower for kw in ["search", "find information", "look up", "today", "find", "what", "where", "when", "how"]):
                 search_query = text
                 if "search for" in text_lower:
                     parts = text.split("search for", 1)
@@ -457,7 +457,7 @@ class BrightDataMCPAgent(A2AServer):
                     print(f"Error calling search_engine tool: {e}")
             
             # Handle webpage scraping requests
-            elif any(kw in text_lower for kw in ["scrape", "extract from", "get content from"]) and "http" in text_lower:
+            elif any(kw in text_lower for kw in ["scrape", "extract from", "get content from", "price"]) and "http" in text_lower:
                 # Extract the URL
                 import re
                 url_match = re.search(r'https?://\S+', text)
@@ -587,18 +587,18 @@ def main():
                 ),
                 AgentSkill(
                     name="Web Search",
-                    description="Search the web using search engines",
+                    description="Search the web using search_engine function",
                     examples=["Search for recent AI advancements", "Find information about climate change"]
                 ),
                 AgentSkill(
                     name="Web Scraping",
-                    description="Extract content from websites as markdown or HTML",
-                    examples=["Scrape https://news.ycombinator.com/", "Get content from https://www.example.com"]
+                    description="Extract content from websites using your scrape_as_markdown or scrape_as_html tools",
+                    examples=["Scrape https://news.ycombinator.com/", "Get content from https://www.example.com", "here is some data from https://www.example.com"]
                 ),
                 AgentSkill(
                     name="Structured Data Extraction",
-                    description="Extract structured data from specific platforms",
-                    examples=["Get data from Amazon product", "Extract LinkedIn profile information"]
+                    description="Extract structured data from specific platformsor from your data sets",
+                    examples=["Get data from Amazon product", "Extract LinkedIn profile information", "get data amazon_product"]
                 ),
             ]
         )
