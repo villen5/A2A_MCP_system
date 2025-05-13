@@ -16,6 +16,7 @@ Requirements:
     pip install "python-a2a[openai,server]"
 """
 
+
 import sys
 import os
 import argparse
@@ -99,8 +100,8 @@ def parse_arguments():
         help="OpenAI model to use (default: gpt-4o-mini)"
     )
     parser.add_argument(
-        "--temperature", type=float, default=0.9,
-        help="Temperature for generation (default: 0.9)"
+        "--temperature", type=float, default=0.1,
+        help="Temperature for generation (default: 0.1)"
     )
     parser.add_argument(
         "--test-only", action="store_true",
