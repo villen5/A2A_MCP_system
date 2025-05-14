@@ -7,11 +7,8 @@ This agent combines the power of GPT with BrightData tools for web scraping,
 search engine results, and structured data extraction.
 
 To run:
-    OpenAI API:
-    export OPENAI_API_KEY=""
-
-    Bright API:
-    export API_TOKEN=""
+    export OPENAI_API_KEY=
+    export API_TOKEN=
     python brightdata_mcp_agent.py
 
 Requirements:
@@ -76,7 +73,7 @@ parser.add_argument("--port", type=int, default=None, help="Agent port (default:
 parser.add_argument("--mcp-port", type=int, default=None, help="MCP port (default: auto)")
 parser.add_argument("--no-auto-mcp", action="store_true", help="Don't auto-start MCP server")
 parser.add_argument("--no-test", action="store_true", help="Don't run test queries")
-parser.add_argument("--model", default="gpt-4o-mini", help="OpenAI model to use")
+parser.add_argument("--model", default="gpt-4o", help="OpenAI model to use")
 args = parser.parse_args()
 
 # Auto-select ports if not specified
@@ -95,6 +92,65 @@ else:
 # Global variables
 API_TOKEN = os.environ.get("API_TOKEN")
 WEB_UNLOCKER_ZONE = os.environ.get("WEB_UNLOCKER_ZONE", "mcp_unlocker")
+
+
+TOOL_PATTERNS = {
+    "search_engine": {
+        "patterns": [
+            r"QUERY:\s*search\s+for\s+(.+)",
+            r"search\s+for\s+(.+)",
+            r"find\s+information\s+about\s+(.+)",
+            r"look\s+up\s+(.+)"
+        ],
+        "priority": 10
+    },
+    "scrape_as_markdown": {
+        "patterns": [
+            r"QUERY:\s*scrape\s+(https?://\S+)",
+            r"scrape\s+(https?://\S+)",
+            r"extract\s+from\s+(https?://\S+)",
+            r"get\s+content\s+from\s+(https?://\S+)"
+        ],
+        "priority": 20
+    },
+    "web_data_amazon_product": {
+        "patterns": [
+            r"QUERY:.*amazon.*(product|price).*?(https?://\S+amazon\S+)",
+            r"amazon.*(product|price).*?(https?://\S+amazon\S+)",
+            r"check.*(price|details).*amazon.*?(https?://\S+amazon\S+)"
+        ],
+        "priority": 30,
+        "url_group": 2  # Which regex group contains the URL
+    },
+    "web_data_linkedin_person_profile": {
+        "patterns": [
+            r"QUERY:.*linkedin.*(person|profile).*?(https?://\S+linkedin.com\S+)",
+            r"linkedin.*(person|profile).*?(https?://\S+linkedin.com\S+)"
+        ],
+        "priority": 30,
+        "url_group": 2
+    },
+    "web_data_linkedin_company_profile": {
+        "patterns": [
+            r"QUERY:.*linkedin.*(company|organization).*?(https?://\S+linkedin.com\S+)",
+            r"linkedin.*(company|organization).*?(https?://\S+linkedin.com\S+)"
+        ],
+        "priority": 30,
+        "url_group": 2
+    },
+    "web_data_instagram_profiles": {
+        "patterns": [
+            r"QUERY:.*instagram.*(profile|account).*?(https?://\S+instagram.com\S+)",
+            r"instagram.*(profile|account).*?(https?://\S+instagram.com\S+)"
+        ],
+        "priority": 30,
+        "url_group": 2
+    }
+}
+
+
+
+
 
 def get_api_headers():
     """Get standard headers for BrightData API calls"""
@@ -407,13 +463,22 @@ class BrightDataMCPAgent(A2AServer):
             model=openai_model,
             temperature=0,
             system_prompt=(
-                "You are a helpful AI assistant that will provide data using BrightData web tools."
-                "When asked questions that can be about web searching or scraping, use the appropriate tool. "
-                "- For search queries, use the search_engine tool with an appropriate search engine.\n"
-                "- For webpage content, use scrape_as_markdown or scrape_as_html.\n"
-                "- For specific data like Amazon products, LinkedIn profiles, or Instagram data, "
-                "  use the appropriate web_data_* tools.\n"
-                "Don't make up information - use the tools to get accurate data."
+                "You are a helpful AI assistant that specializes in providing accurate data using BrightData web tools.\n\n"
+                "IMPORTANT: When you receive a query, first identify which tool is most appropriate to answer it effectively:\n\n"
+                "1. For search queries (search for X, find information about Y), use the search_engine tool.\n"
+                "2. For specific webpage content extraction, use scrape_as_markdown.\n"
+                "3. For Amazon product data, use web_data_amazon_product with the Amazon URL.\n"
+                "4. For LinkedIn profiles, use web_data_linkedin_person_profile or web_data_linkedin_company_profile.\n"
+                "5. For Instagram profiles, use web_data_instagram_profiles.\n\n"
+                "After using a tool, provide a CONCISE, DIRECT response that:\n"
+                "- Summarizes the key information in 2-3 sentences\n"
+                "- Extracts only the most relevant data points\n"
+                "- Organizes information in a structured way when appropriate\n"
+                "- Avoids unnecessary details or explanations\n\n"
+                "DO NOT explain how you got the information or which tools you used unless specifically asked.\n"
+                "Focus on delivering accurate, to-the-point answers that directly address the query.\n"
+
+                "If you recieve a prompt that require multiple searches or scrapings - Identify the needed action, then use the neccessery tools to find the data - When generating the response to these prompt - organize the data in the form of a list"
             )
         )
     
@@ -635,6 +700,20 @@ def main():
     finally:
         # Clean up processes
         if 'client_process' in locals() and client_process:
+            client_process.terminate()
+            client_process.join()
+            
+        if mcp_server_process:
+            print("Stopping MCP server...")
+            mcp_server_process.terminate()
+            mcp_server_process.join()
+    
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+
             client_process.terminate()
             client_process.join()
             
